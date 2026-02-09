@@ -34,9 +34,13 @@ class TrackedObject:
         self.conf = detection.conf
 
         # Variables to store history (For velocity estimation, etc.)
-        self.fame_ids = []  # List of indices of frames where this object was detected
-        self.timestamps = []  # List of timestamps corresponding to the frames
-        self.centers = []  # List of center points of the bounding boxes
+        self.fame_ids_history = (
+            []
+        )  # List of indices of frames where this object was detected
+        self.timestamps_history = []  # List of timestamps corresponding to the frames
+        self.centers_history = []  # List of center points of the bounding boxes
+        self.kf_velocities_history = []  # List of velocity vectors (if needed)
+        self.kf_centers_history = []  # List of velocity vectors (if needed)
 
         self.hits = 1  # number of successful matches when associating new detections to existing tracks
         self.age = 0  # total frames alive
@@ -72,9 +76,13 @@ class TrackedObject:
 
     def update_timeticks(self, frame_id: int, fps: float):
         timestamp = frame_id / fps
-        self.fame_ids.append(frame_id)
-        self.centers.append(bbox_center(self.bbox))
-        self.timestamps.append(timestamp)
+        self.fame_ids_history.append(frame_id)
+        self.centers_history.append(bbox_center(self.bbox))
+        self.timestamps_history.append(timestamp)
+        self.kf_velocities_history.append(
+            self.kf.velocity
+        )  # velocity from Kalman Filter
+        self.kf_centers_history.append(self.kf.position)  # position from Kalman Filter
 
     def update(self, detection: Detection):
         self.bbox = detection.bbox
